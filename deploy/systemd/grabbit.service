@@ -11,6 +11,8 @@ User=grabbit
 Group=grabbit
 WorkingDirectory=/opt/grabbit/current/backend
 EnvironmentFile=/etc/grabbit/grabbit.env
+Environment=PATH=/opt/grabbit/tools/yt-dlp/current/bin:/opt/grabbit/tools/deno/v2.7.0:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=DENO_DIR=/var/lib/grabbit/private/deno-cache
 ExecStart=/opt/grabbit/current/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
 
 Restart=on-failure

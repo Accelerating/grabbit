@@ -89,6 +89,11 @@ The backend requires Python 3.13. On a clean host install `python3.13-venv`,
 organization's approved package workflow. Build the frontend off-host, then
 run `uv sync --python 3.13 --locked --no-dev` in the deployed backend directory.
 Do not copy a macOS virtual environment to the VPS.
+The service unit's `PATH` expects a separate yt-dlp venv at
+`/opt/grabbit/tools/yt-dlp/current` and verified Deno binary at
+`/opt/grabbit/tools/deno/v2.7.0/deno`; keep these paths in sync if versions
+change. yt-dlp should be installed with its `default` extra so the matching
+`yt-dlp-ejs` package is included.
 
 For a consistent backup while the service may be running:
 

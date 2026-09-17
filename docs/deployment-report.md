@@ -21,6 +21,11 @@ SQLite integrity check, service restart and the exact-command sudoers check
 passed. The database file is mode 0600, environment file 0640, and private
 state directory 0700.
 
+A public 559-byte HTTPS page was submitted through the authenticated task API
+as a normal download. It reached `completed` with no error, and its file was
+indexed under the controlled `deployment-smoke/` directory. This validates one
+small real aria2 transfer on Debian, not pause/resume, torrents, or video.
+
 An initial 30-second idle cgroup sample on this host recorded:
 
 | Measure | Result |
@@ -34,6 +39,6 @@ An initial 30-second idle cgroup sample on this host recorded:
 
 CSV evidence is at `/var/lib/grabbit/reports/idle-20260917.csv` on the VPS.
 This is an idle baseline only, **not** the required 768 MiB typical-download
-acceptance. A sustained real download, website package installation, video
+acceptance. A sustained representative download, website package installation, video
 site tests, automatic first-install script, and yt-dlp rollback remain
 unverified or unfinished.

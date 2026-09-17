@@ -1,0 +1,34 @@
+#!/bin/sh
+# Install exactly one Debian-packaged download dependency. Installed root-owned
+# at /usr/local/libexec/grabbit-install; never execute a copy from the release.
+set -eu
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+if [ "$(id -u)" -ne 0 ] || [ "$#" -ne 1 ]; then
+    echo "Expected root and one fixed action" >&2
+    exit 2
+fi
+case "$1" in
+    aria2) package=aria2 ;;
+    ffmpeg) package=ffmpeg ;;
+    *) echo "Unsupported action" >&2; exit 2 ;;
+esac
+
+if [ ! -r /etc/os-release ]; then
+    echo "Cannot verify operating system" >&2
+    exit 2
+fi
+. /etc/os-release
+if [ "${ID:-}" != debian ] || [ "${VERSION_ID:-}" != 13 ]; then
+    echo "Only Debian 13 is supported" >&2
+    exit 2
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+/usr/bin/apt-get -o DPkg::Lock::Timeout=30 update
+/usr/bin/apt-get -o DPkg::Lock::Timeout=30 --no-install-recommends -y install "$package"
+case "$package" in
+    aria2) /usr/bin/aria2c --version ;;
+    ffmpeg) /usr/bin/ffmpeg -version; /usr/bin/ffprobe -version ;;
+esac

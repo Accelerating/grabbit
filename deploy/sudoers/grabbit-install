@@ -1,0 +1,3 @@
+# Validate with visudo -cf before installing. The command path must be owned by
+# root and not writable by the grabbit service user.
+grabbit ALL=(root) NOPASSWD: /usr/local/libexec/grabbit-install aria2, /usr/local/libexec/grabbit-install ffmpeg

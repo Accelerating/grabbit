@@ -1,0 +1,1 @@
+import{n as e,s as t,t as n}from"./jsx-runtime-BoSjksYy.js";var r=n(),i=t(function(){return(0,r.jsx)(e,{to:`/video?new=1`,replace:!0})});export{i as default};

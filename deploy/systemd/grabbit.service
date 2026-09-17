@@ -1,0 +1,30 @@
+[Unit]
+Description=Grabbit download service
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60s
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=grabbit
+Group=grabbit
+WorkingDirectory=/opt/grabbit/current/backend
+EnvironmentFile=/etc/grabbit/grabbit.env
+ExecStart=/opt/grabbit/current/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
+
+Restart=on-failure
+RestartSec=5s
+KillMode=control-group
+TimeoutStopSec=30s
+UMask=0077
+
+# Do not set NoNewPrivileges or ProtectSystem while the exact-command sudo
+# helper installs Debian packages: either restriction would also apply to the
+# helper's mount namespace and prevent apt from writing system directories.
+# The grabbit user itself cannot write the release or system paths.
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

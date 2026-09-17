@@ -1,10 +1,6 @@
 # Replace grabbit.example.com with the configured public domain before install.
 # Caddy handles ACME certificates and HTTP -> HTTPS automatically.
 grabbit.example.com {
-    request_body {
-        max_size 12MB
-    }
-
     # FastAPI performs authentication for every protected file request.
     # Caddy preserves Range/If-Range, and flushes text/event-stream responses.
     reverse_proxy 127.0.0.1:8000

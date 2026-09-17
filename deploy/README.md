@@ -58,8 +58,9 @@ renews the HTTPS certificate automatically. Keep
 `GRABBIT_PUBLIC_ORIGIN=https://your-domain` and
 `GRABBIT_SECURE_COOKIES=true` in the application environment.
 
-The Caddyfile caps request bodies at 12 MB, forwards Range/If-Range, and
-streams SSE through the reverse proxy. It does not expose the private or
+The Caddyfile forwards Range/If-Range and streams SSE through the reverse
+proxy. The Debian 13 Caddy package is older than the `request_body max_size`
+directive; upload limits remain enforced by the application. It does not expose the private or
 download roots as public static files; protected content stays behind FastAPI.
 For a first check without a public domain, use an SSH tunnel to
 `127.0.0.1:8000` with an explicit, temporary development override.

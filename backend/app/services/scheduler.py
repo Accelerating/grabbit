@@ -29,6 +29,19 @@ logger = logging.getLogger("grabbit.scheduler")
 RUNNING = {"resolving", "downloading", "postprocessing"}
 
 
+def aria2_failure_summary(status: dict) -> str:
+    """Return bounded, single-line engine diagnostics safe for task JSON/UI."""
+    message = " ".join(str(status.get("errorMessage") or "").split())
+    engine_code = " ".join(str(status.get("errorCode") or "").split())
+    if message and engine_code:
+        return f"aria2 error {engine_code}: {message}"[:1000]
+    if message:
+        return message[:1000]
+    if engine_code:
+        return f"aria2 error {engine_code}"[:1000]
+    return "Download engine reported an error without details"
+
+
 def as_int(value: object) -> int:
     try:
         return max(0, int(str(value)))
@@ -392,8 +405,9 @@ class Scheduler:
                 await update_db.commit()
             self.active[task.id] = gid
         except Exception as exc:
-            logger.warning("aria2 start failed for task %s: %s", task.id, type(exc).__name__)
-            await self._fail(task.id, gid, "PROCESS_FAILED")
+            detail = " ".join(str(exc).split())[:1000]
+            logger.warning("aria2 start failed for task %s: %s: %s", task.id, type(exc).__name__, detail)
+            await self._fail(task.id, gid, "PROCESS_FAILED", detail or type(exc).__name__)
 
     async def _dispatch_video(self, db, task: Task, item: WorkItem) -> None:
         executable = shutil.which("yt-dlp")
@@ -702,8 +716,10 @@ class Scheduler:
                 self.active.pop(task_id, None)
                 return
             if state == "error":
+                summary = aria2_failure_summary(status)
+                logger.warning("aria2 task %s failed: %s", task_id, summary)
                 await db.commit()
-                await self._fail(task_id, gid, "NETWORK_ERROR")
+                await self._fail(task_id, gid, "NETWORK_ERROR", summary)
                 return
             if metadata:
                 attempt = await db.scalar(select(TaskAttempt).where(TaskAttempt.engine_ref == gid))
@@ -919,13 +935,13 @@ class Scheduler:
             await self._publish_task(task)
             await self._publish_queue()
 
-    async def _fail(self, task_id: str, gid: str, code: str) -> None:
+    async def _fail(self, task_id: str, gid: str, code: str, summary: str | None = None) -> None:
         async with SessionLocal() as db:
             task = await db.get(Task, task_id)
             if task is None:
                 return
             task.error_code = code
-            task.error_summary = "Download attempt failed"
+            task.error_summary = summary or "Download attempt failed"
             task.pending_action = None
             task.phase = None
             task.revision += 1

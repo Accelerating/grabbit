@@ -111,6 +111,39 @@ async def test_pause_releases_slot_only_after_engine_confirmation(tmp_path, monk
 
 
 @pytest.mark.asyncio
+async def test_aria_failure_details_are_saved_for_display(tmp_path, monkeypatch):
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'failure.db'}")
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    monkeypatch.setattr(scheduler_module, "SessionLocal", sessions)
+    root = tmp_path / "downloads"
+    root.mkdir()
+    gid = "1234567890abcdef"
+    async with sessions() as db:
+        db.add(Task(id="failed-task", kind="general", source_type="magnet", source_url="magnet:?xt=urn:btih:" + "ab" * 20, source_fingerprint="ab" * 20, title="magnet", status="resolving", attempt_count=3, download_subdir="general", task_directory_key="general/failed-task", progress_json="{}", selection_json="{}", options_json="{}", warnings_json="[]"))
+        db.add(TaskAttempt(id="failed-attempt", task_id="failed-task", cycle=0, ordinal=3, engine="aria2", status="running", engine_ref=gid))
+        db.add(Aria2Binding(task_id="failed-task", attempt_id="failed-attempt", gid=gid, role="metadata", last_engine_state="active"))
+        await db.commit()
+
+    class FailedAria(FakeAria):
+        async def tell_status(self, _gid):
+            return {"status": "error", "errorCode": "3", "errorMessage": "Resource not found"}
+
+    scheduler = scheduler_module.Scheduler(FailedAria(), Settings(download_root=root, private_root=tmp_path / "private"))
+    scheduler.active["failed-task"] = gid
+    try:
+        await scheduler._poll("failed-task", gid)
+        async with sessions() as db:
+            task = await db.get(Task, "failed-task")
+            assert task.status == "failed"
+            assert task.error_code == "NETWORK_ERROR"
+            assert task.error_summary == "aria2 error 3: Resource not found"
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
 async def test_recovery_reuses_existing_gid_instead_of_duplicate_add(tmp_path, monkeypatch):
     engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'recover.db'}")
     sessions = async_sessionmaker(engine, expire_on_commit=False)

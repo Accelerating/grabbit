@@ -53,6 +53,11 @@ function TaskRow({ task, pending, onAction, onSelected }: { task: Task; pending:
       <div className="task-source" title={task.source_url || undefined}>{task.source_url?.startsWith("magnet:") ? (language === "zh-CN" ? "磁力链接" : "Magnet link") : task.source_url || t("sourceUnknown")}</div>
       <div className="task-progress"><div className="task-progress-track"><span style={{ width: `${percent ?? 0}%` }} /></div><span>{percent === null ? "—" : `${percent.toFixed(percent % 1 ? 1 : 0)}%`}</span></div>
       <div className="task-meta"><span>{formatBytes(progress?.downloaded_bytes)} {t("bytesDownloaded")}{progress?.total_bytes ? ` / ${formatBytes(progress.total_bytes)}` : ""}</span><span>{formatSpeed(progress?.speed_bps)}</span><span>{t("eta")}: {formatEta(progress?.eta_seconds)}</span></div>
+      {(task.status === "failed" || task.status === "retry_wait") && (task.error_summary || task.error_code) && <div className="task-error" role="alert">
+        <strong>{language === "zh-CN" ? "失败原因" : "Failure details"}</strong>
+        <span>{task.error_summary || (language === "zh-CN" ? "下载引擎未返回详细信息" : "The download engine did not return details")}</span>
+        {task.error_code && <code>{task.error_code}</code>}
+      </div>}
     </div>
     <div className="task-actions" aria-label={t("actions")}>
       {actions.filter((action) => available.has(action)).map((action) => <button key={action} className={`icon-button task-action ${action === "cancel" ? "task-action-danger" : ""}`} disabled={pending} onClick={() => onAction(task, action)} title={t(actionLabels[action])} aria-label={t(actionLabels[action])}><Icon name={action === "retry" ? "refresh" : action === "cancel" ? "close" : action === "resume" ? "play" : action} size={15} /></button>)}
@@ -125,7 +130,9 @@ function Downloads() {
     if (taskResult.status === "fulfilled") { setTasks(taskResult.value.items); setError(false); } else if (initial) setError(true);
     if (queueResult.status === "fulfilled") setQueue(queueResult.value);
     if (summaryResult.status === "fulfilled") setSummary(summaryResult.value);
-    if (initial) setLoading(false);
+    // A live refresh may supersede the initial request. Whichever accepted
+    // request finishes last owns the UI state and must dismiss the spinner.
+    setLoading(false);
   }, []);
 
   useEffect(() => { void load(true); }, [load]);

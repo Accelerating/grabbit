@@ -1,5 +1,32 @@
 # Grabbit deployment handoff
 
+## One-command install or update
+
+On a Debian 13 server, clone the repository and run the application-only
+installer as root:
+
+```sh
+sudo ./deploy/install-or-update.sh
+```
+
+The same command handles first installation and later updates. It installs the
+required system packages, creates the `grabbit` account and persistent paths,
+installs locked backend dependencies, checks that the prebuilt frontend is
+present, runs migrations, configures systemd, switches releases atomically,
+and verifies `/healthz`. Before an update it backs up application state; a
+failed health check switches back to the previous release.
+
+Deploy a branch, tag, commit, or a different repository with:
+
+```sh
+sudo ./deploy/install-or-update.sh --repo https://github.com/example/grabbit.git --ref v1.2.3
+```
+
+Run `./deploy/install-or-update.sh --help` for retention and unattended-first-
+install options. The installer intentionally does not configure a domain,
+TLS, firewall, Caddy, or Nginx. Grabbit listens on `127.0.0.1:8000`; expose it
+with a reverse proxy separately when needed.
+
 The repository is deployed as one release: the backend and the frontend's
 browser bundle live together under `/opt/grabbit/current`. Node is needed on a
 developer/CI machine only; the VPS runs Uvicorn, Nginx, SQLite, and the

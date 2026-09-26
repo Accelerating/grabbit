@@ -15,7 +15,7 @@ async def test_cold_table_seeding_is_readable_by_aria2_and_reused(tmp_path, monk
 
     async def query(host, port, node_id):
         calls.append(host)
-        return [(remote_id, ip, 6881)]
+        return [(remote_id, ip, 6881)] + [(bytes([i]) * 20, ip, 6881) for i in range(1, 8)]
 
     monkeypatch.setattr(dht, "_query", query)
     path = tmp_path / "dht.dat"
@@ -24,8 +24,8 @@ async def test_cold_table_seeding_is_readable_by_aria2_and_reused(tmp_path, monk
     assert dht.HEADER.size == dht.NODE.size == 56
     header = dht.HEADER.unpack(data[:56])
     assert header[:3] == (b"\xa1\xa2", 2, 3)
-    assert header[-1] == 1
-    assert dht.NODE.unpack(data[56:]) == (6, ip, 6881, remote_id)
+    assert header[-1] == 8
+    assert dht.NODE.unpack(data[56:112]) == (6, ip, 6881, remote_id)
     assert path.stat().st_mode & 0o777 == 0o600
     await dht.seed_routing_table(path)
     assert len(calls) == len(dht.BOOTSTRAPS)
@@ -42,11 +42,16 @@ async def test_empty_table_reseeded_and_network_failure_is_nonfatal(tmp_path, mo
     await dht.seed_routing_table(path)
     assert not path.exists()
     path.write_bytes(dht.HEADER.pack(b"\xa1\xa2", 2, 3, 1, 0, b"a" * 20, 0))
+    calls = []
     async def available(*args):
+        calls.append(args)
         return [(b"b" * 20, socket.inet_aton("8.8.4.4"), 6881)]
     monkeypatch.setattr(dht, "_query", available)
     await dht.seed_routing_table(path)
     assert int.from_bytes(path.read_bytes()[48:52], "big") == 1
+    # A table left with only the bootstrap node must be reseeded as well.
+    await dht.seed_routing_table(path)
+    assert len(calls) == 2 * len(dht.BOOTSTRAPS)
 
 
 def test_dht_decoder_rejects_malformed_packets():

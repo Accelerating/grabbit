@@ -105,8 +105,15 @@ async def seed_routing_table(path: Path) -> None:
         data = path.read_bytes()
         if len(data) >= HEADER.size and data[:8] == b"\xa1\xa2\x02\x00\x00\x00\x00\x03":
             count = int.from_bytes(data[48:52], "big")
-            if count and len(data) == HEADER.size + count * NODE.size:
-                return
+            if len(data) == HEADER.size + count * NODE.size:
+                public_nodes = sum(
+                    ipaddress.IPv4Address(NODE.unpack(data[offset:offset + NODE.size])[1]).is_global
+                    for offset in range(HEADER.size, len(data), NODE.size)
+                )
+                # A bootstrap-only or nearly empty table is not a successful
+                # bootstrap. Retry seeding rather than retaining that state.
+                if public_nodes >= 8:
+                    return
     node_id = secrets.token_bytes(20)
     replies = await asyncio.gather(*(_query(host, port, node_id) for host, port in BOOTSTRAPS))
     nodes = list(dict.fromkeys(node for reply in replies for node in reply))[:64]

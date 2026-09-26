@@ -101,7 +101,8 @@ private routing table before starting aria2. This avoids relying on bootstrap
 servers' `get_peers` responses, which may omit the token required by aria2.
 The lookup is bounded to four seconds; failures leave aria2's entry-point
 fallback available and do not prevent the Web service from starting.
-Existing nonempty tables are reused. Its routing table is persisted as
+Existing tables with at least eight public nodes are reused; nearly empty
+tables are reseeded. Its routing table is persisted as
 `<GRABBIT_PRIVATE_ROOT>/aria2/dht.dat`, so trackerless magnets can discover
 peers on a fresh installation and retain learned nodes after a restart.
 The VPS must permit DNS resolution and outbound UDP with response traffic.

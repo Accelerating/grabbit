@@ -95,7 +95,13 @@ For a first check without a public domain, use an SSH tunnel to
 ## Debian 13 dependencies and maintenance
 
 The application-managed aria2 config enables IPv4 DHT and bootstraps through
-`dht.transmissionbt.com:6881`. Its routing table is persisted as
+`dht.transmissionbt.com:6881`. On a cold start, the application also queries
+that host and `dht.libtorrent.org:25401` with `find_node` and seeds a small
+private routing table before starting aria2. This avoids relying on bootstrap
+servers' `get_peers` responses, which may omit the token required by aria2.
+The lookup is bounded to four seconds; failures leave aria2's entry-point
+fallback available and do not prevent the Web service from starting.
+Existing nonempty tables are reused. Its routing table is persisted as
 `<GRABBIT_PRIVATE_ROOT>/aria2/dht.dat`, so trackerless magnets can discover
 peers on a fresh installation and retain learned nodes after a restart.
 The VPS must permit DNS resolution and outbound UDP with response traffic.

@@ -52,6 +52,9 @@ async def test_lifecycle_rpc_contract_and_private_config(tmp_path: Path, monkeyp
         return "OK"
 
     monkeypatch.setattr(Aria2Engine, "_rpc", fake_rpc)
+    async def skip_bootstrap(_path):
+        pass
+    monkeypatch.setattr("app.engines.aria2.seed_routing_table", skip_bootstrap)
     executed: list[tuple[Any, ...]] = []
 
     async def fake_create(*args: Any, **kwargs: Any) -> FakeProcess:

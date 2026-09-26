@@ -22,6 +22,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from app.engines.dht import seed_routing_table
+
 
 class Aria2Error(RuntimeError):
     """Base error raised by :class:`Aria2Engine`."""
@@ -136,6 +138,7 @@ class Aria2Engine:
 
             self.state_dir.mkdir(parents=True, exist_ok=True)
             self.state_dir.chmod(0o700)
+            await seed_routing_table(self.state_dir / "dht.dat")
             if self.rpc_port == 0:
                 self.rpc_port = self._find_free_port()
             self._write_config()

@@ -72,6 +72,9 @@ async def test_lifecycle_rpc_contract_and_private_config(tmp_path: Path, monkeyp
         assert "rpc-listen-all=false" in config
         assert "rpc-max-request-size=16M" in config
         assert "seed-time=0" in config
+        assert "enable-dht=true" in config
+        assert "dht-entry-point=dht.transmissionbt.com:6881" in config
+        assert f"dht-file-path={engine.state_dir / 'dht.dat'}" in config
 
         gid = await engine.add_uri("https://example.test/file.bin", root / "task", "0123456789abcdef")
         assert gid == "0123456789abcdef"

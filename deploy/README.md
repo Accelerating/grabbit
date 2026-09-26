@@ -94,6 +94,16 @@ For a first check without a public domain, use an SSH tunnel to
 
 ## Debian 13 dependencies and maintenance
 
+The application-managed aria2 config enables IPv4 DHT and bootstraps through
+`dht.transmissionbt.com:6881`. Its routing table is persisted as
+`<GRABBIT_PRIVATE_ROOT>/aria2/dht.dat`, so trackerless magnets can discover
+peers on a fresh installation and retain learned nodes after a restart.
+The VPS must permit DNS resolution and outbound UDP with response traffic.
+Missing peers or an unreachable bootstrap node can still cause metadata
+timeouts; bootstrap does not guarantee that every magnet has available seeds.
+Do not manually patch the generated `aria2.conf`: the application recreates
+it at startup.
+
 Install the restricted helper as root, not from the writable application release:
 
 ```sh

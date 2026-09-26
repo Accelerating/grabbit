@@ -461,6 +461,11 @@ class Aria2Engine:
             "max-connection-per-server": "2",
             "split": "2",
             "bt-max-peers": "20",
+            # Trackerless magnets need a way into DHT on a fresh installation.
+            # Enabling DHT alone leaves an empty routing table isolated.
+            "enable-dht": "true",
+            "dht-entry-point": "dht.transmissionbt.com:6881",
+            "dht-file-path": str(self.state_dir / "dht.dat"),
             "summary-interval": "1",
             "max-tries": "3",
             "retry-wait": "5",
